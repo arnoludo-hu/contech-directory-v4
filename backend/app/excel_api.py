@@ -100,7 +100,7 @@ def render(s,plan,page,page_size,from_snapshot=False):
     for score,r in scored[start:start+page_size]:
         explanation=explain(r,plan,score)
         matches.append(Match(solution_id=r['solution_id'],company_id=r['company_id'],company=r['company'],solution=r['solution'],score=score,source_urls=r['source_urls'],**explanation))
-    message=(f'{total} matching imported solution records from {companies} company labels. Recorded claims have not been independently verified.' if total else 'No matching records for these filters. Unknown required attributes are excluded; try removing a constraint.')
+    message=(f'{total} matching imported solution records from {companies} company labels.' if total else 'No matching records for this search.')
     if capability and not total:
         message=('No solutions have sufficient recorded evidence for the requested '+capability.replace('_',' ')+' capability. Related or undocumented tools are not confirmed matches.')
     if plan.intent=='count':message=f'{total} provisional solution records from {companies} company labels satisfy the current database filters. This is not a verified market count.'
