@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useMemo,useState} from 'react';import Link from 'next/link';import {ArrowRight,Search,Building2,Camera,HardHat,ShieldCheck,Loader2} from 'lucide-react';import {api,searchRequest,type Match,type SearchResponse} from '../lib/api';
-const examples=['Which AI startups are based in Singapore?','Find computer vision solutions for construction progress monitoring.','Show overseas solutions with a local Singapore reseller.','Which vendors have verified PSG-approved solutions?'];
+const examples=['Which AI startups are based in Singapore?','Find computer vision solutions for construction progress monitoring.','Show overseas solutions with a local Singapore reseller.','Which vendors have PSG-approved solutions?'];
 const challenges=[{icon:Camera,title:'Monitor site progress',query:'Find AI solutions for construction progress monitoring',desc:'Track site progress and compare with plans'},{icon:HardHat,title:'Improve site safety',query:'Find AI tools for construction site safety monitoring',desc:'Identify risks and unsafe behaviours'},{icon:Building2,title:'Improve facility operations',query:'Find AI solutions for predictive building maintenance',desc:'Predict faults and optimise maintenance'}];
 function plainExplanation(m:Match):string {
   // Only describe evidence supplied by the backend. No invented capabilities.
