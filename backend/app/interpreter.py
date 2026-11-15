@@ -115,33 +115,7 @@ def fallback(message:str,has_state=False)->QueryPlan:
         pass
     return QueryPlan(intent=intent,operation=op,problem='' if follow else message,hard=hard,preferences=prefs,remove_fields=remove,compare_positions=positions)
 
-
-def extract_geographic_filters(query: str) -> dict:
-    q = query.lower().strip()
-
-    overseas = bool(
-        re.search(
-            r"\b(overseas|foreign|outside singapore)\b",
-            q
-        )
-    )
-
-    no_sg_presence = bool(
-        re.search(
-            r"\b(no|without|not|exclude)\b"
-            r".{0,35}\b("
-            r"singapore presence|local presence|"
-            r"singapore office|local reseller|local entity"
-            r")\b",
-            q
-        )
-    )
-
-    return {
-        "overseas_origin": overseas,
-        "no_sg_presence": no_sg_presence
-    }
-
+    
 def interpret(message,has_state=False):
     # Enforce the directory's explicit broad-presence discovery policy regardless of LLM availability.
     # Strict verified-only requests still use the verified attributes.
