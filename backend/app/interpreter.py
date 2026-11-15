@@ -20,29 +20,6 @@ COUNTRY_ALIASES = {
     'NZ': (r'\b(?:new zealand)\b',),
 }
 
-def geographic_filters(q: str):
-    """Return geographic filter groups; OR country names, AND other constraints."""
-    mentioned=[]
-    for iso,patterns in COUNTRY_ALIASES.items():
-        if any(re.search(p,q) for p in patterns):mentioned.append(iso)
-    overseas=bool(re.search(r'\b(overseas|outside singapore|not based in singapore|non.singapore)\b',q))
-    # Singapore can be a support requirement rather than an origin requirement.
-    sg_support=bool(re.search(r'\b(singapore|local)\s+(?:reseller|partner|support|presence|office|entity)\b|\b(?:reseller|partner|support|presence|office|entity)\s+in\s+singapore\b',q))
-    if sg_support and 'SG' in mentioned and not re.search(r'\b(?:origin|from|based in|headquartered in)\s+singapore\b',q):
-        mentioned.remove('SG')
-    groups=[]
-    if overseas:
-        groups.append(FilterGroup(any_of=[Predicate(field='origin_country',op='not_in',values=['SG'])]))
-    if not mentioned and not overseas and re.search(r'\bsingapore[- ]based\b|\bsingapore (?:startups|companies|vendors)\b',q) and not sg_support:
-        mentioned=['SG']
-    if mentioned:
-        # 'not from Australia' / 'exclude US' are exclusions, not positive selections.
-        negative=bool(re.search(r'\b(?:exclude|excluding|not from|except|without)\b',q))
-        if negative:
-            groups.append(FilterGroup(any_of=[Predicate(field='origin_country',op='not_in',values=mentioned)]))
-        else:
-            groups.append(FilterGroup(any_of=[Predicate(field='origin_country',op='in',values=mentioned)]))
-    return groups
 
 def funding_filters(q: str):
     """Only exact, recorded funding rounds qualify; avoid 'raising Series C' claims."""
@@ -50,7 +27,94 @@ def funding_filters(q: str):
     matches=[]
     for m in re.finditer(r'\bseries\s*([a-f])\b', q):
         stage='Series '+m.group(1).upper()
-        if stage not in matches:matches.append(stage)
+        if s
+def geographic_filters(q: str):
+    """Extract origin and Singapore-presence requirements."""
+    q = q.lower().strip()
+
+    groups = []
+
+    # Identify country mentions.
+    mentioned = []
+    for iso, patterns in COUNTRY_ALIASES.items():
+        if any(re.search(p, q) for p in patterns):
+            mentioned.append(iso)
+
+    # Identify overseas-origin requirement.
+    overseas = bool(re.search(
+        r"\b(overseas|foreign|non[- ]singapore|"
+        r"outside singapore|not based in singapore)\b",
+        q
+    ))
+
+    # Explicit negative Singapore-presence expressions.
+    no_sg_presence = bool(re.search(
+        r"\b(?:no|without|not|exclude|excluding)\b"
+        r"(?:\s+\w+){0,5}\s+"
+        r"(?:singapore|local)\s+"
+        r"(?:presence|office|entity|reseller|support)\b"
+        r"|\bnot\s+in\s+singapore\b",
+        q
+    ))
+
+    # Positive Singapore-presence expressions.
+    sg_support = bool(re.search(
+        r"\b(?:singapore|local)\s+"
+        r"(?:reseller|partner|support|presence|office|entity)\b"
+        r"|\b(?:reseller|partner|support|presence|office|entity)"
+        r"\s+in\s+singapore\b",
+        q
+    ))
+
+    # SG mentioned as local presence, not country of origin.
+    if (sg_support or no_sg_presence) and "SG" in mentioned:
+        if not re.search(
+            r"\b(?:origin|from|based in|headquartered in)"
+            r"\s+singapore\b",
+            q
+        ):
+            mentioned.remove("SG")
+
+    # Overseas-origin filter.
+    if overseas:
+        groups.append(FilterGroup(any_of=[
+            Predicate(
+                field="origin_country",
+                op="not_in",
+                values=["SG"]
+            )
+        ]))
+
+    # Explicit negative local-presence filter.
+    if no_sg_presence:
+        groups.append(FilterGroup(any_of=[
+            Predicate(
+                field="singapore_presence_recorded",
+                op="eq",
+                values=["false"]
+            )
+        ]))
+
+    # Positive country-origin filters.
+    if mentioned:
+        negative_origin = bool(re.search(
+            r"\b(?:exclude|excluding|not from|except)\b"
+            r"(?:\s+\w+){0,3}\s+"
+            r"(?:australia|united states|usa|japan|"
+            r"singapore|uk|china|germany)\b",
+            q
+        ))
+
+        groups.append(FilterGroup(any_of=[
+            Predicate(
+                field="origin_country",
+                op="not_in" if negative_origin else "in",
+                values=mentioned
+            )
+        ]))
+
+    return groups
+tage not in matches:matches.append(stage)
     if re.search(r'\bpre[ -]?seed\b',q):matches.append('Pre-Seed')
     elif re.search(r'\bseed(?:[ -]?(?:round|stage|funded))?\b',q):matches.append('Seed')
     if re.search(r'\bearly[ -]stage\b',q):matches.append('Early stage (unspecified)')
